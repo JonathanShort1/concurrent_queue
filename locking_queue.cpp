@@ -6,56 +6,72 @@
 // -----------------------------------------------------------------------------
 //                      LockingQueue PUBLIC FUNCTIONS
 // -----------------------------------------------------------------------------
+
+
 template <typename T>
-int LockingQueue<T>::size(){
-    return d_data.size();
+LockingQueue<T>::LockingQueue()
+: d_front(NULL)
+, d_back(NULL)
+, d_size(0)
+{
 }
 
 template <typename T>
-void LockingQueue<T>::printData(){
-    std::queue<T> q; // temp queue
-    std::cout << "Data: ";
-    T tmp;
-    while(!d_data.empty()) {
-        tmp = d_data.front();
-        d_data.pop();
-        std::cout << tmp << " ";
-        q.push(tmp); // keep value
-    }
-
-    std::cout << std::endl;
-
-    d_data.swap(q); // restore queue
+int LockingQueue<T>::size()
+{
+    return d_size;
 }
 
 template <typename T>
-void LockingQueue<T>::enqueue(T payload)
+void LockingQueue<T>::printData()
 {
     d_lock.lock();
-    d_data.push(payload);
+    Node<T> *curr = d_front;
+    while (curr != NULL) {
+        std::cout << curr->d_value << " ";
+        curr = curr->d_next;
+    }
+    std::cout << std::endl;
+    d_lock.unlock();
+}
+
+template <typename T>
+void LockingQueue<T>::enqueue(const T& payload)
+{
+    d_lock.lock();
+
+    Node<T> *new_node = new Node<T>(payload);
+    if (d_front == NULL && d_back == NULL) {
+        d_front = d_back = new_node;
+    } else {
+        d_back->d_next = new_node;
+        d_back = new_node;
+    }
+    ++d_size;
+
     d_lock.unlock();
 }
 
 template <typename T>
 T LockingQueue<T>::dequeue()
 {
-    int result;
+    T result;
+    Node<T> *tmp;
     d_lock.lock();
-    result = d_data.front();
-    d_data.pop();
+    if(d_size > 0) {
+        tmp = d_front;
+        result = tmp->d_value;
+        d_front = tmp->d_next;
+        // would free tmp but think destructor resolves this memory leak
+        delete tmp;
+        --d_size;
+    }
     d_lock.unlock();
     return result;
 }
 
 // Types to allow
+template LockingQueue<int>::LockingQueue();
 template int LockingQueue<int>::size();
-template int LockingQueue<char>::size();
-template int LockingQueue<std::string>::size();
-
 template void LockingQueue<int>::printData();
-template void LockingQueue<char>::printData();
-template void LockingQueue<std::string>::printData();
-
-template void LockingQueue<int>::enqueue(int payload);
-template void LockingQueue<char>::enqueue(char payload);
-template void LockingQueue<std::string>::enqueue(std::string payload);
+template void LockingQueue<int>::enqueue(const int& payload);

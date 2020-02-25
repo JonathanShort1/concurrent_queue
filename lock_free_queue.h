@@ -1,20 +1,19 @@
-#ifndef LOCKING_QUEUE_H
-#define LOCKING_QUEUE_H
+#ifndef LOCK_FREE_QUEUE_H
+#define LOCK_FREE_QUEUE_H
 
 #include "node.h"
-#include <mutex>
+#include <atomic>
 
 template <typename T>
-class LockingQueue {
+class LockFreeQueue {
     private:
-        Node<T>       *d_front;
-        Node<T>       *d_back;
-        std::mutex  d_lock;
-        int         d_size;
+        std::atomic<Node<T> *> d_front;
+        std::atomic<Node<T> *> d_back;
+        std::atomic<int>    d_size;
 
     public:
         // CREATORS
-        LockingQueue();
+        LockFreeQueue();
 
         // ACCESSORS
         int size();
