@@ -23,25 +23,12 @@ int LockingQueue<T>::size()
 }
 
 template <typename T>
-void LockingQueue<T>::printData()
-{
-    d_lock.lock();
-    Node<T> *curr = d_front;
-    while (curr != NULL) {
-        std::cout << curr->d_value << " ";
-        curr = curr->d_next;
-    }
-    std::cout << std::endl;
-    d_lock.unlock();
-}
-
-template <typename T>
 void LockingQueue<T>::enqueue(const T& payload)
 {
     d_lock.lock();
 
     Node<T> *new_node = new Node<T>(payload);
-    if (d_front == NULL && d_back == NULL) {
+    if (d_size == 0) {
         d_front = d_back = new_node;
     } else {
         d_back->d_next = new_node;
@@ -62,8 +49,6 @@ T LockingQueue<T>::dequeue()
         tmp = d_front;
         result = tmp->d_value;
         d_front = tmp->d_next;
-        // would free tmp but think destructor resolves this memory leak
-        delete tmp;
         --d_size;
     }
     d_lock.unlock();
@@ -73,5 +58,5 @@ T LockingQueue<T>::dequeue()
 // Types to allow
 template LockingQueue<int>::LockingQueue();
 template int LockingQueue<int>::size();
-template void LockingQueue<int>::printData();
 template void LockingQueue<int>::enqueue(const int& payload);
+template int LockingQueue<int>::dequeue();

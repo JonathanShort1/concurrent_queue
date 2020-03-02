@@ -1,11 +1,12 @@
 #ifndef LOCK_FREE_QUEUE_H
 #define LOCK_FREE_QUEUE_H
 
-#include "node.h"
 #include <atomic>
+#include "cqueue.h"
+#include "node.h"
 
 template <typename T>
-class LockFreeQueue {
+class LockFreeQueue : public CQueue<T> {
     private:
         std::atomic<Node<T> *> d_front;
         std::atomic<Node<T> *> d_back;
@@ -17,8 +18,7 @@ class LockFreeQueue {
 
         // ACCESSORS
         int size();
-        void printData();
-        
+
         // MODIFIERS
         void enqueue(const T& payload);
         T dequeue();
