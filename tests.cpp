@@ -19,9 +19,9 @@ void producer(CQueue<T> *queue, int id, int numEnqueues)
 }
 
 template <typename T = int>
-void consumer(CQueue<T> *queue, int id,  int numEnqueues)
+void consumer(CQueue<T> *queue, int id,  int numDequeues)
 {
-    for (int i = 0; i < numEnqueues; ++i) {
+    for (int i = 0; i < numDequeues; ++i) {
         queue->dequeue();
         std::this_thread::sleep_for(std::chrono::milliseconds(id / 2));
     }
@@ -150,9 +150,10 @@ void test_dequeue_then_enqueue_once(LockFreeQueue<T>* queue)
 
     std::thread thread_arr[2];
     thread_arr[0] = std::thread(consumer<int>, queue, 10, 1);
-    thread_arr[1] = std::thread(producer<int>, queue, 10, 1);
     thread_arr[0].join();
+    thread_arr[1] = std::thread(producer<int>, queue, 10, 1);
     thread_arr[1].join();
+    std::cout << queue->size() << std::endl;
     assert(queue->size() == 1);
 }
 

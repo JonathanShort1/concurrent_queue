@@ -5,9 +5,9 @@
 
 #include "cqueue.h"
 
-void performance_main();
+void performance_main(int numCores);
 
 template <typename T>
-void performance_test(std::ofstream& outFile, CQueue<T> *queue, int flag);
+void performance_test(std::ofstream& outFile, int numCores, CQueue<T> *queue, int flag);
 
 #endif

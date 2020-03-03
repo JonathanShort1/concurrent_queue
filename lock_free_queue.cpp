@@ -30,21 +30,35 @@ void LockFreeQueue<T>::enqueue(const T& payload)
     Node<T> *tail;
     Node<T> *next;
     while(1) {
-        tail = d_back.load();
+        tail = d_back.load(std::memory_order_relaxed);
         next = tail->d_next;
         if (tail == d_back) {
             if (next == NULL) {
-                if (std::atomic_compare_exchange_weak<Node<T> *>(&tail->d_next, &next, newNode)) {
+                if (std::atomic_compare_exchange_weak_explicit<Node<T> *>(
+                                                &tail->d_next,
+                                                &next,
+                                                newNode,
+                                                std::memory_order_relaxed,
+                                                std::memory_order_relaxed)) {
                     ++d_size;
                     break;
                 }
             } else {
-                std::atomic_compare_exchange_weak<Node<T> *>(&d_back, &tail, next);
+                std::atomic_compare_exchange_weak_explicit<Node<T> *>(
+                                                     &d_back,
+                                                     &tail,
+                                                     next,
+                                                     std::memory_order_relaxed,
+                                                     std::memory_order_relaxed);
             }
         }
     }
 
-    std::atomic_compare_exchange_weak(&d_back, &tail, newNode);
+    std::atomic_compare_exchange_weak_explicit(&d_back,
+                                               &tail,
+                                               newNode,
+                                               std::memory_order_relaxed,
+                                               std::memory_order_relaxed);
 }
 
 template <typename T>
@@ -53,8 +67,8 @@ T LockFreeQueue<T>::dequeue()
     T result;
 
     while(1) {
-        Node<T> *head = d_front;
-        Node<T> *tail = d_back;
+        Node<T> *head = d_front.load(std::memory_order_relaxed);
+        Node<T> *tail = d_back.load(std::memory_order_relaxed);
         Node<T>* next = head->d_next;
 
         if (head == d_front) {
@@ -63,10 +77,20 @@ T LockFreeQueue<T>::dequeue()
                     // QUEUE IS EMPTY
                     return false;
                 }
-                std::atomic_compare_exchange_weak(&d_back, &tail, next);
+                std::atomic_compare_exchange_weak_explicit(
+                                                    &d_back,
+                                                    &tail,
+                                                    next,
+                                                    std::memory_order_relaxed,
+                                                    std::memory_order_relaxed);
             } else {
                 result = next->d_value;
-                if (std::atomic_compare_exchange_weak(&d_front, &head, next)) {
+                if (std::atomic_compare_exchange_weak_explicit(
+                                                &d_front,
+                                                &head,
+                                                next,
+                                                std::memory_order_relaxed,
+                                                std::memory_order_relaxed)) {
                     // successful dequeue
                     --d_size;
                     break;
