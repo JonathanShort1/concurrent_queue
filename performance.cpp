@@ -10,6 +10,14 @@
 #define BUSY_WAIT 400
 #define NUM_OPERATIONS 1000000
 
+// -----------------------------------------------------------------------------
+//                      THREAD WORKER
+// -----------------------------------------------------------------------------
+
+/**
+ * This function first enqueues, does "other work", dequeues and finally does
+ * "other work" again.  It does this a for a number of iterations.
+ */
 template <typename T>
 void worker(CQueue<T> *queue, int divisor)
 {
@@ -29,6 +37,10 @@ void worker(CQueue<T> *queue, int divisor)
     }
 }
 
+// -----------------------------------------------------------------------------
+//                      PERFORMANCE SUITE
+// -----------------------------------------------------------------------------
+
 template <typename T>
 void performance_test(std::ofstream& outFile,
                       int numCores,
@@ -39,6 +51,7 @@ void performance_test(std::ofstream& outFile,
 
     auto start = std::chrono::high_resolution_clock::now();
 
+    // start each worker
     for (int i = 0; i < numCores; ++i) {
         thread_arr[i] = std::thread(worker<int>, queue, numCores);
     }
@@ -61,8 +74,9 @@ void performance_main(int numCores)
     std::cout << "Running performance experiments" << std::endl;
     LockingQueue<int> *lq = new LockingQueue<int>();
     LockFreeQueue<int> *fq = new LockFreeQueue<int>();
-    std::ofstream outFile;
 
+    // open csv file to write out results
+    std::ofstream outFile;
     outFile.open("performance.csv", std::ios_base::app);
 
     performance_test(outFile, numCores, lq, 0);

@@ -1,3 +1,8 @@
+/**
+ * This struct defines a node in a concurrent queue implementation.  The d_next
+ * node is atomic so that it can be used in the C++11 atomic CAS functions.
+ */
+
 #ifndef NODE_H
 #define NODE_H
 

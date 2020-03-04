@@ -1,3 +1,9 @@
+/**
+ * This header represents a locking implementation of a concurrent queue. This
+ * class inherits a public interface from the class CQueue. The lock type used
+ * is std::mutex.
+ */
+
 #ifndef LOCKING_QUEUE_H
 #define LOCKING_QUEUE_H
 

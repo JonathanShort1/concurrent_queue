@@ -7,7 +7,8 @@
 //                      LockFreeQueue PUBLIC FUNCTIONS
 // -----------------------------------------------------------------------------
 
-
+// Initialise the Queue with one dummy node to change the empty condition from
+// (d_front == NULL && d_back == NULL) to (d_front == d_back)
 template <typename T>
 LockFreeQueue<T>::LockFreeQueue()
 : d_size(0)
@@ -16,12 +17,17 @@ LockFreeQueue<T>::LockFreeQueue()
     d_front = d_back = dummy;
 }
 
+// atomically load the size into a tempary variable
 template <typename T>
 int LockFreeQueue<T>::size()
 {
-    return d_size;
+    int size = d_size.load(std::memory_order_seq_cst);
+    return size;
 }
 
+/**
+ * 
+ */
 template <typename T>
 void LockFreeQueue<T>::enqueue(const T& payload)
 {

@@ -1,14 +1,21 @@
-
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 
-#include "locking_queue.h"
-#include "lock_free_queue.h"
 #include "performance.h"
 #include "tests.h"
 
 using namespace std;
 
+/**
+ * This function is the main entry to the concurrent queue implementations.
+ * This program takes one argument.
+ * 
+ * opt: 
+ *      -1: Run the unit tests
+ *  1 - 12: Run the performance tests with <opt> threads (if ran with command
+ *          taskset then each thread can run on a separate core, see man
+ *          taskset)
+ */
 int main(int argc, char *argv[])
 {
     if (argc == 1) {
@@ -18,7 +25,6 @@ int main(int argc, char *argv[])
     }
 
     int opt = std::strtol(argv[1], nullptr, 0);
-    cout << opt << endl;
 
     switch(opt) {
         case -1:

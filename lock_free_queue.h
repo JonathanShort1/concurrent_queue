@@ -1,3 +1,8 @@
+/**
+ * This header represents the implementation of a lock-free concurrent queue.
+ * It inherits a pulbic interface from the class CQueue.
+ */
+
 #ifndef LOCK_FREE_QUEUE_H
 #define LOCK_FREE_QUEUE_H
 

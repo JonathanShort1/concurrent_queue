@@ -4,12 +4,24 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
-#include <string>
+
+#include "locking_queue.h"
+#include "lock_free_queue.h"
 
 #define NUM_OPERATIONS 5
 #define NUM_THREADS 10
 
-template <typename T = int>
+// -----------------------------------------------------------------------------
+//                      THREAD WORKERS
+// -----------------------------------------------------------------------------
+
+/**
+ * These functions are spawned by indiviual threads to operate on the given
+ * 'queue'. 'id' is used to determine how long the thread should sleep for in
+ * each iteration. 'numEnqueues' & 'numDequeues' determine the number of
+ * operations the thread should perform on the queue.
+ */
+template <typename T>
 void producer(CQueue<T> *queue, int id, int numEnqueues)
 {
     for (int i = 0; i < numEnqueues; ++i) {
@@ -18,7 +30,7 @@ void producer(CQueue<T> *queue, int id, int numEnqueues)
     }
 }
 
-template <typename T = int>
+template <typename T>
 void consumer(CQueue<T> *queue, int id,  int numDequeues)
 {
     for (int i = 0; i < numDequeues; ++i) {
@@ -40,6 +52,7 @@ void test_enqueue_single_thread(CQueue<T>* queue)
     for (int i = 0; i < NUM_OPERATIONS; ++i) {
         queue->enqueue(i);
     }
+
     assert(queue->size() == NUM_OPERATIONS);
 }
 
@@ -47,9 +60,11 @@ template <typename T>
 void test_dequeue_single_thread(CQueue<T>* queue)
 {
     assert(queue->size() == 0);
+
     for (int i = 0; i < NUM_OPERATIONS; ++i) {
         queue->enqueue(i);
     }
+
     assert(queue->size() == NUM_OPERATIONS);
 
     for (int i = 0; i < NUM_OPERATIONS; ++i) {
@@ -63,6 +78,7 @@ template <typename T>
 void test_enqueue_two_threads(CQueue<T>* queue)
 {
     assert(queue->size() == 0);
+
     std::thread thread_arr[2];
 
     // enqueue
@@ -72,6 +88,7 @@ void test_enqueue_two_threads(CQueue<T>* queue)
     for (int i = 0; i < 2; ++i) {
         thread_arr[i].join();
     }
+
     assert(queue->size() == (2 * NUM_OPERATIONS));
 }
 
@@ -85,6 +102,7 @@ void test_dequeue_two_threads(CQueue<T>* queue)
     for (int i = 0; i < 2 * NUM_OPERATIONS; ++i) {
         queue->enqueue(i);
     }
+
     assert(queue->size() == (2 * NUM_OPERATIONS));
 
     // dequeue
@@ -94,6 +112,7 @@ void test_dequeue_two_threads(CQueue<T>* queue)
     for (int i = 0; i < 2; ++i) {
         thread_arr[i].join();
     }
+
     assert(queue->size() == 0);
 }
 
@@ -101,6 +120,7 @@ template <typename T>
 void test_enqueue_multi_threads(CQueue<T>* queue)
 {
     assert(queue->size() == 0);
+
     std::thread thread_arr[NUM_THREADS];
 
     // enqueue
@@ -110,6 +130,7 @@ void test_enqueue_multi_threads(CQueue<T>* queue)
     for (int i = 0; i < NUM_THREADS; ++i) {
         thread_arr[i].join();
     }
+
     assert(queue->size() == (NUM_THREADS * NUM_OPERATIONS));
 }
 
@@ -117,12 +138,14 @@ template <typename T>
 void test_dequeue_multi_threads(CQueue<T>* queue)
 {
     assert(queue->size() == 0);
+
     std::thread thread_arr[NUM_THREADS];
 
     // enqueue
     for (int i = 0; i < NUM_THREADS * NUM_OPERATIONS; ++i) {
        queue->enqueue(i);
     }
+
     assert(queue->size() == (NUM_THREADS * NUM_OPERATIONS));
 
     // dequeue
@@ -132,11 +155,12 @@ void test_dequeue_multi_threads(CQueue<T>* queue)
     for (int i = 0; i < NUM_THREADS; ++i) {
         thread_arr[i].join();
     }
+
     assert(queue->size() == 0);
 }
 
 template <typename T>
-void test_dequeue_empty_locking(LockingQueue<T>* queue)
+void test_dequeue_empty_locking(CQueue<T>* queue)
 {
     assert(queue->size() == 0);
     queue->dequeue();
@@ -144,7 +168,7 @@ void test_dequeue_empty_locking(LockingQueue<T>* queue)
 }
 
 template <typename T>
-void test_dequeue_then_enqueue_once(LockFreeQueue<T>* queue)
+void test_dequeue_then_enqueue_once(CQueue<T>* queue)
 {
     assert(queue->size() == 0);
 
@@ -153,14 +177,15 @@ void test_dequeue_then_enqueue_once(LockFreeQueue<T>* queue)
     thread_arr[0].join();
     thread_arr[1] = std::thread(producer<int>, queue, 10, 1);
     thread_arr[1].join();
-    std::cout << queue->size() << std::endl;
+
     assert(queue->size() == 1);
 }
 
 template <typename T>
-void test_dequeue_then_enqueue_multi(LockFreeQueue<T>* queue)
+void test_dequeue_then_enqueue_multi(CQueue<T>* queue)
 {
     assert(queue->size() == 0);
+
     std::thread thread_arr[NUM_THREADS];
 
     for (int i = 0; i < NUM_THREADS; i += 2) {
@@ -170,6 +195,7 @@ void test_dequeue_then_enqueue_multi(LockFreeQueue<T>* queue)
     for (int i = 0; i < NUM_THREADS; ++i) {
         thread_arr[i].join();
     }
+    
     // Cannot determinstically guarantee the size of queue
     // more showing that the queue doesn't live lock
 }
@@ -177,14 +203,14 @@ void test_dequeue_then_enqueue_multi(LockFreeQueue<T>* queue)
 template <typename T>
 void run_test(void (*t)(CQueue<T> *), std::string testName)
 {
-    std::cout << "Runnning test: " << testName << " ";
+    std::cout << "Runnning test: " << testName << std::endl << "\t(locking queue) ";
     LockingQueue<int> *lq = new LockingQueue<int>();
     (*t)(lq);
-    std::cout << " PASS for locking queue, ";
+    std::cout << " PASS\n\t(lock free queue) ";
 
     LockFreeQueue<int> *fq = new LockFreeQueue<int>();
     (*t)(fq);
-    std::cout << "PASS for lock free queue" << std::endl;
+    std::cout << "PASS" << std::endl;
 }
 
 void test_main()
@@ -196,21 +222,11 @@ void test_main()
     run_test<int>(&test_dequeue_two_threads, "test_dequeue_two_threads");
     run_test<int>(&test_enqueue_multi_threads, "test_enqueue_multi_threads");
     run_test<int>(&test_dequeue_multi_threads, "test_dequeue_multi_threads");
-    
-    std::cout << "Runnning test: " << "test_dequeue_empty_locking" << " ";
-    LockingQueue<int> *lq = new LockingQueue<int>();
-    test_dequeue_empty_locking(lq);
-    std::cout << "PASS" << std::endl;
-
-    std::cout << "Runnning test: " << "test_dequeue_then_enqueue_once" << " ";
-    LockFreeQueue<int> *fq = new LockFreeQueue<int>();
-    test_dequeue_then_enqueue_once(fq);
-    std::cout << "PASS" << std::endl;
-
-    std::cout << "Runnning test: " << "test_dequeue_then_enqueue_multi" << " ";
-    LockFreeQueue<int> *fq1 = new LockFreeQueue<int>();
-    test_dequeue_then_enqueue_multi(fq1);
-    std::cout << "PASS" << std::endl;
+    run_test<int>(&test_dequeue_empty_locking, "test_dequeue_empty_locking");
+    run_test<int>(&test_dequeue_then_enqueue_once, "test_dequeue_then_enqueue_once");
+    run_test<int>(&test_dequeue_then_enqueue_multi, "test_dequeue_then_enqueue_multi");
+    std::cout << "All passed!" << std::endl;
 }
 
+/* Types accepted by 'run_test'*/
 template void run_test(void (*f)(CQueue<int> *q), std::string testName);
