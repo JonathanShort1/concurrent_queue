@@ -1,5 +1,5 @@
 # concurrent_queue
-Implementation and analysis of locking and lock free concurrent queues using C++
+Implementation and analysis of locking and lock free concurrent queues using C++. The lock-free implementation follows the algorithm descrided in this [paper](https://www.cs.rochester.edu/~scott/papers/1996_PODC_queues.pdf). 
 
 # How to compile:
  - `cd concurrent_queue`
